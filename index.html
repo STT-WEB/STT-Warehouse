@@ -283,20 +283,18 @@ let user=null,txType='',pinBuf='',selId=null;
 let emps=[],jobs=[],qr=null,npTarget=null,npVal='0';
 let curProd=null,poItems=[];
 
-// INIT
+// INIT — โหลดแค่ Employees ก่อน Jobs โหลดทีหลังตอนเปิด TX
 window.onload=async()=>{
   setInterval(()=>{const d=document.getElementById('clock');if(d)d.textContent=new Date().toLocaleString('th-TH',{weekday:'short',year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})},1000);
   try{
-    const[er,jr]=await Promise.all([
-      fetch(API+'?action=getEmployees').then(r=>r.json()),
-      fetch(API+'?action=getJobs').then(r=>r.json())
-    ]);
+    const er=await fetch(API+'?action=getEmployees').then(r=>r.json());
     if(er.status==='success')emps=er.employees;
-    if(jr.status==='success')jobs=jr.jobs;
   }catch(e){emps=[{id:'S001',name:'Store',dept:'WAREHOUSE',pin:'1234'}]}
   renderEmps();
   document.getElementById('loading').classList.add('hide');
   show('login');
+  // โหลด Jobs ใน background หลัง Login แสดงแล้ว
+  fetch(API+'?action=getJobs').then(r=>r.json()).then(d=>{if(d.status==='success')jobs=d.jobs}).catch(()=>{});
 };
 
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('screen-'+id).classList.add('active')}
@@ -341,12 +339,19 @@ function logout(){user=null;selId=null;pinBuf='';updDots();document.querySelecto
 const TITLES={RC:'รับเข้าสินค้า',WD:'เบิกออกสินค้า',BR:'ยืมสินค้า',RT:'คืนสินค้า',WH:'รับไม่มี PO',AR:'ปรับยอด +',AW:'ปรับยอด −'};
 
 async function openTx(type){
-  txType=type;curProd=null;poItems=[];
+  txType=type;curProd=null;
+  // ล้าง PO session ถ้าไม่ใช่ RC
+  if(type!=='RC'){poItems=[];sessionStorage.removeItem('poItems');sessionStorage.removeItem('poNo');}
   document.getElementById('tx-title').textContent=TITLES[type];
   document.getElementById('tx-badge').textContent=type;
-  // ดึง DocNo แบบ parallel ไม่บล็อก UI
+  if(jobs.length===0&&(type==='WD'||type==='RT')){
+    toast('กำลังโหลด Job Code...');
+    try{const jr=await fetch(`${API}?action=getJobs`).then(r=>r.json());if(jr.status==='success')jobs=jr.jobs;}catch{}
+  }
   const dr=await fetch(`${API}?action=getDocNo&code=${type}`).then(r=>r.json()).catch(()=>({docno:type+Date.now()}));
   buildBody(type,dr.docno||type+Date.now());
+  // Restore PO session ถ้าเป็น RC
+  if(type==='RC')restorePOSession();
   show('transaction');
 }
 
@@ -432,20 +437,43 @@ function buildBody(type,docno){
 async function searchPO(){
   const poNo=(document.getElementById('f-poref')?.value||'').trim().toUpperCase();
   if(!poNo){toast('ใส่เลข PO ก่อน',true);return}
-  toast('กำลังค้นหา...');
+  const btn=document.querySelector('.po-search-btn');
+  if(btn){btn.textContent='⏳ กำลังค้นหา...';btn.disabled=true;}
   try{
-    const d=await fetch(`${API}?action=getPOItems&poNo=${encodeURIComponent(poNo)}`).then(r=>r.json());
+    const ctrl=new AbortController();
+    const timer=setTimeout(()=>ctrl.abort(),60000);
+    const res=await fetch(`${API}?action=getPOItems&poNo=${encodeURIComponent(poNo)}`,{signal:ctrl.signal});
+    clearTimeout(timer);
+    const d=await res.json();
     if(d.status==='success'){
       poItems=d.items;
-      // Cache ไว้ใน sessionStorage กันหาย
       sessionStorage.setItem('poItems',JSON.stringify(d.items));
       sessionStorage.setItem('poNo',poNo);
       renderPOI(d.items);
       document.getElementById('poi-section').style.display='block';
       document.getElementById('poi-notify').style.display='block';
-      toast(`พบ ${d.items.length} รายการ`,false,true);
+      toast('พบ '+d.items.length+' รายการ',false,true);
     }else{toast('ไม่พบ PO นี้',true)}
-  }catch{toast('เกิดข้อผิดพลาด กรุณาลองใหม่',true)}
+  }catch(err){
+    if(err.name==='AbortError'){toast('หมดเวลา กรุณาลองใหม่',true)}
+    else{toast('เกิดข้อผิดพลาด กรุณาลองใหม่',true)}
+  }finally{
+    if(btn){btn.textContent='🔍 ค้นหา';btn.disabled=false;}
+  }
+}
+
+// Restore PO items ถ้า Session ยังมีข้อมูลอยู่
+function restorePOSession(){
+  const saved=sessionStorage.getItem('poItems');
+  const savedNo=sessionStorage.getItem('poNo');
+  if(saved&&savedNo){
+    poItems=JSON.parse(saved);
+    const inp=document.getElementById('f-poref');
+    if(inp)inp.value=savedNo;
+    renderPOI(poItems);
+    document.getElementById('poi-section').style.display='block';
+    document.getElementById('poi-notify').style.display='block';
+  }
 }
 
 function renderPOI(items){
