@@ -21,22 +21,30 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15
 .screen.active{display:flex}
 
 /* LOGIN */
-#screen-login{background:var(--bg);align-items:center;justify-content:center;padding:24px;overflow-y:auto}
-.login-logo{font-family:var(--mono);font-size:11px;letter-spacing:4px;color:var(--text3);text-transform:uppercase;margin-bottom:32px;text-align:center}
-.login-logo span{display:block;font-size:28px;font-weight:700;color:var(--red);letter-spacing:2px;margin-bottom:4px}
-.login-step{font-size:13px;color:var(--text2);margin-bottom:16px;text-align:center;font-weight:600}
-.emp-list{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:360px;margin-bottom:28px}
-.emp-btn{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 12px;cursor:pointer;text-align:center;transition:all .15s;color:var(--text)}
-.emp-btn:hover,.emp-btn.selected{border-color:var(--red);background:#1f1215}
-.emp-btn .emp-name{font-size:14px;font-weight:600}
-.emp-btn .emp-dept{font-size:11px;color:var(--text2);margin-top:2px}
-.pin-title{font-size:12px;color:var(--text3);margin-bottom:12px;text-align:center;letter-spacing:1px;text-transform:uppercase}
+#screen-login{background:var(--bg);display:flex;flex-direction:column;overflow:hidden}
+.login-header{background:var(--bg2);border-bottom:1px solid var(--border);padding:16px;text-align:center;flex-shrink:0}
+.login-logo{font-family:var(--mono);font-size:11px;letter-spacing:4px;color:var(--text3);text-transform:uppercase}
+.login-logo span{display:block;font-size:24px;font-weight:700;color:var(--red);letter-spacing:2px;margin-bottom:2px}
+.login-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px}
+.login-section-title{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);padding:0 4px}
+.emp-list{display:flex;flex-direction:column;gap:8px}
+.emp-btn{background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;display:flex;align-items:center;gap:14px;transition:all .15s;color:var(--text)}
+.emp-btn:active,.emp-btn.selected{border-color:var(--red);background:#1f1215}
+.emp-avatar{width:40px;height:40px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;border:1px solid var(--border)}
+.emp-info{flex:1}
+.emp-btn .emp-name{font-size:15px;font-weight:600}
+.emp-btn .emp-dept{font-size:12px;color:var(--text2);margin-top:2px}
+.emp-btn.selected .emp-avatar{background:var(--red);border-color:var(--red)}
+.pin-section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;display:none}
+.pin-section.show{display:block}
+.pin-section-title{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:12px;text-align:center}
+.pin-selected-name{font-size:14px;font-weight:600;color:var(--text);text-align:center;margin-bottom:16px}
 .pin-display{display:flex;gap:12px;justify-content:center;margin-bottom:20px}
-.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--border2);background:transparent;transition:all .15s}
+.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border2);background:transparent;transition:all .15s}
 .pin-dot.filled{background:var(--red);border-color:var(--red)}
-.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:260px;width:100%}
-.pin-key{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;font-size:20px;font-weight:600;font-family:var(--mono);cursor:pointer;text-align:center;color:var(--text);transition:all .1s;user-select:none}
-.pin-key:active{background:var(--bg3);transform:scale(.95)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:300px;margin:0 auto;width:100%}
+.pin-key{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:18px;font-size:22px;font-weight:600;font-family:var(--mono);cursor:pointer;text-align:center;color:var(--text);transition:all .1s;user-select:none}
+.pin-key:active{background:var(--border);transform:scale(.95)}
 .pin-key.del{font-size:16px;color:var(--text2)}
 .pin-key.cancel{font-size:13px;color:var(--text2)}
 
@@ -185,29 +193,39 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15
 
 <!-- LOGIN -->
 <div class="screen" id="screen-login">
-  <div class="login-logo"><span>STT</span>ระบบคลังสินค้า</div>
-  <div class="login-step">① เลือกชื่อของคุณ</div>
-  <div class="emp-list" id="emp-list"></div>
-  <div class="pin-title">② กด PIN 4 หลัก</div>
-  <div class="pin-display" id="pin-display">
-    <div class="pin-dot" id="d0"></div>
-    <div class="pin-dot" id="d1"></div>
-    <div class="pin-dot" id="d2"></div>
-    <div class="pin-dot" id="d3"></div>
+  <div class="login-header">
+    <div class="login-logo"><span>STT</span>ระบบคลังสินค้า</div>
   </div>
-  <div class="pin-pad">
-    <div class="pin-key" onclick="pinKey('1')">1</div>
-    <div class="pin-key" onclick="pinKey('2')">2</div>
-    <div class="pin-key" onclick="pinKey('3')">3</div>
-    <div class="pin-key" onclick="pinKey('4')">4</div>
-    <div class="pin-key" onclick="pinKey('5')">5</div>
-    <div class="pin-key" onclick="pinKey('6')">6</div>
-    <div class="pin-key" onclick="pinKey('7')">7</div>
-    <div class="pin-key" onclick="pinKey('8')">8</div>
-    <div class="pin-key" onclick="pinKey('9')">9</div>
-    <div class="pin-key cancel" onclick="pinClear()">ล้าง</div>
-    <div class="pin-key" onclick="pinKey('0')">0</div>
-    <div class="pin-key del" onclick="pinDel()">⌫</div>
+  <div class="login-body">
+    <div class="login-section-title">① เลือกชื่อของคุณ</div>
+    <div class="emp-list" id="emp-list"></div>
+    <div class="pin-section" id="pin-section">
+      <div class="pin-section-title">② ใส่รหัสพนักงาน</div>
+      <div class="pin-selected-name" id="pin-selected-name">—</div>
+      <div class="pin-display" id="pin-display">
+        <div class="pin-dot" id="d0"></div>
+        <div class="pin-dot" id="d1"></div>
+        <div class="pin-dot" id="d2"></div>
+        <div class="pin-dot" id="d3"></div>
+        <div class="pin-dot" id="d4"></div>
+        <div class="pin-dot" id="d5"></div>
+        <div class="pin-dot" id="d6"></div>
+      </div>
+      <div class="pin-pad">
+        <div class="pin-key" onclick="pinKey('1')">1</div>
+        <div class="pin-key" onclick="pinKey('2')">2</div>
+        <div class="pin-key" onclick="pinKey('3')">3</div>
+        <div class="pin-key" onclick="pinKey('4')">4</div>
+        <div class="pin-key" onclick="pinKey('5')">5</div>
+        <div class="pin-key" onclick="pinKey('6')">6</div>
+        <div class="pin-key" onclick="pinKey('7')">7</div>
+        <div class="pin-key" onclick="pinKey('8')">8</div>
+        <div class="pin-key" onclick="pinKey('9')">9</div>
+        <div class="pin-key cancel" onclick="pinClear()">ล้าง</div>
+        <div class="pin-key" onclick="pinKey('0')">0</div>
+        <div class="pin-key del" onclick="pinDel()">⌫</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -316,7 +334,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15
 <div class="toast" id="toast"></div>
 
 <script>
-const API='https://script.google.com/macros/s/AKfycbzIpyNYc9-B9MPw-wAfbo0ihEWh5hlADV-U9ihLmdTaUXhT1611SuO8vUFFbR9lV4CV/exec';
+const API='https://script.google.com/macros/s/AKfycbxMe3R0w5CBKHj98wikRJ3KWLTE0SEc-uXKHbNkXE7AC5i2tK5vEoaaW124tsXijhv5/exec';
 let user=null,txType='',pinBuf='',selEmp=null;
 let employees=[],jobs=[],qrScanner=null;
 let numpadTarget=null,numpadVal='0';
@@ -358,39 +376,57 @@ function showScreen(id){
 function renderEmps(){
   document.getElementById('emp-list').innerHTML=employees.map(e=>`
     <div class="emp-btn" onclick="selEmpFn('${e.id}')" id="emp-${e.id}">
-      <div class="emp-name">${e.name}</div>
-      <div class="emp-dept">${e.dept}</div>
+      <div class="emp-avatar">👤</div>
+      <div class="emp-info">
+        <div class="emp-name">${e.name}</div>
+        <div class="emp-dept">${e.dept}</div>
+      </div>
     </div>`).join('');
 }
 function selEmpFn(id){
   selEmp=id;pinBuf='';updatePins();
   document.querySelectorAll('.emp-btn').forEach(b=>b.classList.remove('selected'));
   document.getElementById('emp-'+id)?.classList.add('selected');
+  const emp=employees.find(e=>e.id===id);
+  if(emp){
+    document.getElementById('pin-selected-name').textContent=emp.name;
+    document.getElementById('pin-section').classList.add('show');
+    document.getElementById('pin-section').scrollIntoView({behavior:'smooth',block:'start'});
+  }
 }
 function pinKey(k){
   if(!selEmp){showToast('เลือกชื่อก่อนนะ');return}
-  if(pinBuf.length>=4)return;
+  if(pinBuf.length>=7)return;
   pinBuf+=k;updatePins();
-  if(pinBuf.length===4)setTimeout(checkPin,200);
+  if(pinBuf.length>=4){
+    const emp=employees.find(e=>e.id===selEmp);
+    if(emp&&String(emp.pin)===pinBuf)setTimeout(checkPin,200);
+  }
 }
 function pinDel(){pinBuf=pinBuf.slice(0,-1);updatePins()}
 function pinClear(){pinBuf='';updatePins()}
 function updatePins(){
-  for(let i=0;i<4;i++)document.getElementById('d'+i)?.classList.toggle('filled',i<pinBuf.length);
+  for(let i=0;i<7;i++){
+    const d=document.getElementById('d'+i);
+    if(d)d.classList.toggle('filled',i<pinBuf.length);
+  }
 }
 function checkPin(){
   const e=employees.find(e=>e.id===selEmp);if(!e)return;
   if(String(e.pin)===pinBuf){
     user=e;
     document.getElementById('user-name-display').textContent=e.name;
-    pinBuf='';updatePins();showScreen('main');
-  }else{
-    showToast('PIN ไม่ถูกต้อง',true);pinBuf='';updatePins();
+    pinBuf='';updatePins();
+    document.getElementById('pin-section').classList.remove('show');
+    showScreen('main');
+  }else if(pinBuf.length>=7){
+    showToast('รหัสไม่ถูกต้อง',true);pinBuf='';updatePins();
   }
 }
 function logout(){
   user=null;selEmp=null;pinBuf='';updatePins();
   document.querySelectorAll('.emp-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('pin-section').classList.remove('show');
   showScreen('login');
 }
 
