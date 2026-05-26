@@ -207,9 +207,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15
         <div class="pin-dot" id="d1"></div>
         <div class="pin-dot" id="d2"></div>
         <div class="pin-dot" id="d3"></div>
-        <div class="pin-dot" id="d4"></div>
-        <div class="pin-dot" id="d5"></div>
-        <div class="pin-dot" id="d6"></div>
       </div>
       <div class="pin-pad">
         <div class="pin-key" onclick="pinKey('1')">1</div>
@@ -396,17 +393,14 @@ function selEmpFn(id){
 }
 function pinKey(k){
   if(!selEmp){showToast('เลือกชื่อก่อนนะ');return}
-  if(pinBuf.length>=7)return;
+  if(pinBuf.length>=4)return;
   pinBuf+=k;updatePins();
-  if(pinBuf.length>=4){
-    const emp=employees.find(e=>e.id===selEmp);
-    if(emp&&String(emp.pin)===pinBuf)setTimeout(checkPin,200);
-  }
+  if(pinBuf.length===4)setTimeout(checkPin,200);
 }
 function pinDel(){pinBuf=pinBuf.slice(0,-1);updatePins()}
 function pinClear(){pinBuf='';updatePins()}
 function updatePins(){
-  for(let i=0;i<7;i++){
+  for(let i=0;i<4;i++){
     const d=document.getElementById('d'+i);
     if(d)d.classList.toggle('filled',i<pinBuf.length);
   }
@@ -419,8 +413,8 @@ function checkPin(){
     pinBuf='';updatePins();
     document.getElementById('pin-section').classList.remove('show');
     showScreen('main');
-  }else if(pinBuf.length>=7){
-    showToast('รหัสไม่ถูกต้อง',true);pinBuf='';updatePins();
+  }else{
+    showToast('PIN ไม่ถูกต้อง',true);pinBuf='';updatePins();
   }
 }
 function logout(){
