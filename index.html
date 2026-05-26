@@ -488,7 +488,7 @@ function renderPOI(items){
         <div class="poi-meta">${item.goodcode} · ${item.jobcode||'INV'}</div>
       </div>
       <span class="poi-status ${sc}">${st}</span>
-      <div class="poi-ordered">สั่ง ${ord}<br>รับ ${rec}</div>
+      <div class="poi-ordered">สั่ง ${ord} ${item.unit||''}<br>รับ ${rec}</div>
       <div class="poi-qty" onclick="openNpItem(${i},'${(item.goodname||'').replace(/'/g,'').substring(0,15)}')" id="qi-${i}">${rem}</div>
     </div>`;
   }).join('');
@@ -577,17 +577,32 @@ async function submitTx(){
     const list=[];
     poItems.forEach((item,i)=>{
       const qty=parseInt(document.getElementById(`qi-${i}`)?.textContent?.trim()||'0');
-      if(qty>0)list.push({date:dateStr,code:'RC',no:i+1,docno,goodcode:item.goodcode,goodname:item.goodname,qty,unit1:'',unit2:'',poref:poNo,jobcode:item.jobcode||'',requester:user.name,dept:user.dept,category:'Inventory',inout:'1.รับเข้า',remark:'',goodtype:'',empid:user.id,approver:'',key:`${item.goodcode}|${poNo}|${item.jobcode||''}`,notifyQC:nQC&&i===0,notifyDesign:nDes&&i===0});
+      if(qty>0)list.push({
+        date:dateStr,code:'RC',no:i+1,docno,
+        goodcode:item.goodcode,goodname:item.goodname,
+        qty,unit1:item.unit||'',unit2:item.unit||'',
+        poref:poNo,
+        jobcode:item.jobcode||'',
+        jobname:item.jobname||'',
+        requester:user.name,dept:user.dept,
+        category:'Inventory',inout:'1.รับเข้า',
+        remark:'',goodtype:'',
+        empid:user.id,approver:user.name,
+        key:item.goodcode+'|'+poNo+'|'+(item.jobcode||''),
+        notifyQC:nQC&&i===0,notifyDesign:nDes&&i===0
+      });
     });
     if(!list.length){toast('ใส่จำนวนอย่างน้อย 1 รายการ',true);return}
-    btn.classList.add('loading');document.getElementById('sub-label').textContent=`บันทึก ${list.length} รายการ...`;
+    btn.classList.add('loading');
+    document.getElementById('sub-label').textContent='บันทึก '+list.length+' รายการ...';
     try{
-      let ok=0;
-      for(const p of list){
-        try{const r=await fetch(API,{method:'POST',body:JSON.stringify(p)});const d=await r.json();if(d.status==='success')ok++;}catch{}
-      }
+      // ส่งเป็น Batch ครั้งเดียว เร็วกว่าส่งทีละรายการ
+      const res=await fetch(API,{method:'POST',body:JSON.stringify(list)});
+      const d=await res.json();
+      sessionStorage.removeItem('poItems');
+      sessionStorage.removeItem('poNo');
       document.getElementById('s-docno').textContent=docno;
-      document.getElementById('s-detail').textContent=`บันทึกสำเร็จ ${ok}/${list.length} รายการ\nผู้รับ: ${user.name}`;
+      document.getElementById('s-detail').textContent='บันทึกสำเร็จ '+list.length+' รายการ\nผู้รับ: '+user.name;
       document.getElementById('success').classList.add('show');
     }catch{toast('เกิดข้อผิดพลาด',true)}
     finally{btn.classList.remove('loading');document.getElementById('sub-label').textContent='บันทึกรายการ'}
@@ -607,14 +622,26 @@ async function submitTx(){
   const cat=document.getElementById('f-cat')?.value||gt;
   const inout=code==='RT'?(rttype==='คืนคลัง'?'6.รับคืนสินค้า':'2.เบิกออก'):inoutMap[code]||'';
   let req=user.name,dept=user.dept;
-  if(code==='WD'){const rn=document.getElementById('rname')?.textContent;const rd=document.getElementById('rdept')?.textContent;if(rn){req=rn;dept=rd}}
-  const payload={date:dateStr,code,no:parseInt(docno.slice(-4)),docno,goodcode:gc,goodname:gn,qty,unit1:u1,unit2:u1,poref,jobcode,requester:req,dept,category:cat,inout,remark:rttype?(rttype+(remark?` — ${remark}`:'')):remark,goodtype:gt,empid:user.id,approver:appr,key:`${gc}|${poref}|${jobcode}`,notifyQC:false,notifyDesign:false};
+  if(code==='WD'){const rn=document.getElementById('rname')?.textContent;const rd=document.getElementById('rdept')?.textContent;if(rn&&rn!==''){req=rn;dept=rd}}
+  // หา jobname จาก jobs array
+  const jobObj=jobs.find(j=>j.code===jobcode);
+  const jobname=jobObj?jobObj.name:'';
+  const payload={
+    date:dateStr,code,no:parseInt(docno.slice(-4)),docno,
+    goodcode:gc,goodname:gn,qty,unit1:u1,unit2:u1,
+    poref,jobcode,jobname,
+    requester:req,dept,category:cat,inout,
+    remark:rttype?(rttype+(remark?' — '+remark:'')):remark,
+    goodtype:gt,empid:user.id,approver:user.name,
+    key:gc+'|'+poref+'|'+jobcode,
+    notifyQC:false,notifyDesign:false
+  };
   btn.classList.add('loading');document.getElementById('sub-label').textContent='กำลังบันทึก...';
   try{
     const d=await fetch(API,{method:'POST',body:JSON.stringify(payload)}).then(r=>r.json());
     if(d.status==='success'){
       document.getElementById('s-docno').textContent=docno;
-      document.getElementById('s-detail').textContent=`${gn}\nจำนวน ${qty} ${u1}\nStore: ${user.name}${req!==user.name?'\nผู้เบิก: '+req:''}`;
+      document.getElementById('s-detail').textContent=gn+'\nจำนวน '+qty+' '+u1+'\nStore: '+user.name+(req!==user.name?'\nผู้เบิก: '+req:'');
       document.getElementById('success').classList.add('show');
     }else{toast('Error: '+(d.message||''),true)}
   }catch{toast('เชื่อมต่อไม่ได้',true)}
